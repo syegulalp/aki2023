@@ -8,6 +8,7 @@ class Codegen:
         self.module = ir.Module()
         self.str_name = 0
         self.strings = {}
+        self.symtab = {}
 
     def codegen_function(self, name="main", ftype=None):
         if not ftype:
@@ -16,6 +17,14 @@ class Codegen:
         block = func.append_basic_block("entry")
         self.builder = ir.IRBuilder(block)
         return func, self.builder
+
+    def codegen_get_var(self, name, load=False):
+        var = self.symtab.get(name)
+        if var is None:
+            raise ValueError
+        if load:
+            var = self.builder.load(var)
+        return var
 
     def codegen_funccall(self, call_name, args):
         func = self.module.globals.get(call_name)
@@ -27,9 +36,22 @@ class Codegen:
             raise NameError
         return func(self.builder, args)
 
-    def codegen_string(self, token):
-        # generates string constants at compile time
+    def codegen_assignment(self, target_name, value):
+        var = self.symtab.get(target_name)
+        if var is None:
+            var = self.builder.alloca(value.type)
+            self.symtab[target_name] = var
+        if var.type.pointee != value.type:
+            raise ValueError
+        self.builder.store(value, var)
 
+    def codegen_int(self, value):
+        int_value = int(value)
+        return ir.Constant(ir.IntType(64), int_value)
+
+    def codegen_string(self, token):
+        # generates string constants at *compile* time
+        # we may want to move this into the String type
         base_text = token.children[0][1:-1]
         text = self.strings.get(base_text)
         if text is None:

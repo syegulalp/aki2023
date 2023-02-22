@@ -14,6 +14,7 @@ parser = Lark.open_from_package(
 class Walker(Interpreter):
     def __init__(self):
         self.codegen = codegen.Codegen()
+        self.fcw = FuncCallWalker(self.codegen)
 
     def file_input(self, tree):
         # ideally, codegen_function w/some options passed?
@@ -24,7 +25,9 @@ class Walker(Interpreter):
         builder.ret(ir.Constant(function.function_type.return_type, 0))
 
     def funccall(self, tree):
-        call_name, arguments = self.visit_children(tree)
+        children = tree.children
+        call_name = self.visit(children[0])
+        arguments = [self.fcw.visit(a) for a in children[1].children]
         self.codegen.codegen_funccall(call_name, arguments)
 
     def expr_stmt(self, tree):
@@ -36,8 +39,30 @@ class Walker(Interpreter):
     def arguments(self, tree):
         return self.visit_children(tree)
 
-    def name(self, token):
-        return str(token.children[0])
+    def name(self, tree):
+        return str(tree.children[0])
 
     def string(self, token):
         return self.codegen.codegen_string(token)
+
+    def number(self, tree):
+        val = tree.children[0]
+        return self.codegen.codegen_int(val)
+
+    def assign(self, tree):
+        target_name, value = self.visit_children(tree)
+        return self.codegen.codegen_assignment(target_name, value)
+
+
+class FuncCallWalker(Interpreter):
+    def __init__(self, codegen):
+        self.codegen = codegen
+
+    def name(self, tree):
+        name_val = tree.children[0]
+        return self.codegen.codegen_get_var(name_val, load=True)
+
+    arguments = Walker.arguments
+    var = Walker.var
+    string = Walker.string
+    number = Walker.number

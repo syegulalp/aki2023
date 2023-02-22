@@ -2,8 +2,8 @@ from aki.walker import Walker, parser
 from aki.jitengine import JitEngine
 
 text = r"""
-print ("Hello world")
-print ("What's going on?")
+x = "Hello world"
+print(x)
 print ("Hello world")
 """
 
@@ -15,7 +15,7 @@ jit = JitEngine()
 w = Walker()
 w.visit(tree)
 
-print(str(w.codegen.module))
+# print(str(w.codegen.module))
 
 mod = jit.compile_ir(str(w.codegen.module))
 func_ptr = jit.engine.get_function_address("main")
