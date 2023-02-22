@@ -1,10 +1,12 @@
 from llvmlite import ir
-from aki import aki_types
+
+from aki import aki_types, codegen as cg
 
 
-def print_(builder: ir.IRBuilder, args):
-    fn = builder.module.globals.get("printf")
+def print_(codegen: cg.Codegen, args):
+    builder = codegen.builder
     m: ir.Module = builder.module
+    fn = builder.module.globals.get("printf")
     if fn is None:
         ftype = ir.FunctionType(ir.IntType(8), [ir.PointerType(ir.IntType(8))])
         fn = ir.Function(builder.module, ftype, "printf")

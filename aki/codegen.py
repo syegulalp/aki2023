@@ -1,5 +1,5 @@
 from llvmlite import ir
-from aki import aki_builtins as bi
+
 from aki import aki_types
 
 
@@ -28,13 +28,15 @@ class Codegen:
 
     def codegen_funccall(self, call_name, args):
         func = self.module.globals.get(call_name)
+        from aki import aki_builtins as bi
+
         if not func:
             func = bi.__dict__.get(call_name)
         if not func:
             func = bi.__dict__.get(call_name + "_")
         if not func:
             raise NameError
-        return func(self.builder, args)
+        return func(self, args)
 
     def codegen_assignment(self, target_name, value):
         var = self.symtab.get(target_name)
