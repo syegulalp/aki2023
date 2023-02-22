@@ -54,15 +54,10 @@ class Walker(Interpreter):
         return self.codegen.codegen_assignment(target_name, value)
 
 
-class FuncCallWalker(Interpreter):
+class FuncCallWalker(Walker):
     def __init__(self, codegen):
         self.codegen = codegen
 
     def name(self, tree):
         name_val = tree.children[0]
         return self.codegen.codegen_get_var(name_val, load=True)
-
-    arguments = Walker.arguments
-    var = Walker.var
-    string = Walker.string
-    number = Walker.number
