@@ -1,5 +1,6 @@
 from llvmlite import ir
 from aki import aki_builtins as bi
+from aki import aki_types
 
 
 class Codegen:
@@ -21,26 +22,47 @@ class Codegen:
         if not func:
             func = bi.__dict__.get(call_name)
         if not func:
+            func = bi.__dict__.get(call_name + "_")
+        if not func:
             raise NameError
         return func(self.builder, args)
 
     def codegen_string(self, token):
+        # generates string constants at compile time
+
         base_text = token.children[0][1:-1]
         text = self.strings.get(base_text)
         if text is None:
-            text = base_text.replace("\\n", "\n")
-            text += "\x00"
+            text = base_text + "\x00"
+            bytes_text = bytearray(text, encoding="utf8")
             string_constant = ir.Constant(
-                ir.ArrayType(ir.IntType(8), len(text)), bytearray(text, encoding="utf8")
+                ir.ArrayType(ir.IntType(8), len(bytes_text)), bytes_text
             )
             string_const_ref = ir.GlobalVariable(
-                self.module, string_constant.type, f"@str_{self.str_name}"
+                self.module, string_constant.type, f"const:str_txt_{self.str_name}"
             )
             string_const_ref.global_constant = True
             string_const_ref.linkage = "internal"
             string_const_ref.initializer = string_constant
+
+            string_var = ir.GlobalVariable(
+                self.module,
+                aki_types.String(self.module).type,
+                f"const:str_obj_{self.str_name}",
+            )
+            string_var.global_constant = True
+            string_const_ref.linkage = "internal"
+
+            string_var.initializer = aki_types.String(self.module).type(
+                [
+                    ir.Constant(ir.IntType(64), len(bytes_text)),
+                    string_const_ref.bitcast(ir.PointerType(ir.IntType(8))),
+                ]
+            )
             self.str_name += 1
-            self.strings[base_text] = string_const_ref
+            self.strings[base_text] = string_var
+
         else:
-            string_const_ref = text
-        return string_const_ref
+            string_var = text
+
+        return string_var
