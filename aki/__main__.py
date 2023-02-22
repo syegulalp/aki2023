@@ -4,7 +4,7 @@ from aki.jitengine import JitEngine
 text = r"""
 x = "Hello world"
 print(x)
-print ("Hello world")
+print("Hello world")
 """
 
 tree = parser.parse(text)
