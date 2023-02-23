@@ -10,11 +10,14 @@ parser = Lark.open_from_package(
     "lark", "python.lark", ["grammars"], parser="lalr", **kwargs
 )
 
+# TODO: load and store
+
 
 class Walker(Interpreter):
     def __init__(self):
         self.codegen = codegen.Codegen()
         self.fcw = FuncCallWalker(self.codegen)
+        self.vw = ValueWalker(self.codegen)
 
     def file_input(self, tree):
         # ideally, codegen_function w/some options passed?
@@ -50,13 +53,22 @@ class Walker(Interpreter):
         return self.codegen.codegen_int(val)
 
     def assign(self, tree):
-        target_name, value = self.visit_children(tree)
+        target_name = self.visit(tree.children[0])
+        value = self.vw.visit(tree.children[1])
         return self.codegen.codegen_assignment(target_name, value)
 
 
+class ValueWalker(Walker):
+    def __init__(self, cgen: codegen.Codegen):
+        self.codegen = cgen
+
+    def name(self, tree):
+        return self.codegen.codegen_get_var(tree.children[0])
+
+
 class FuncCallWalker(Walker):
-    def __init__(self, codegen):
-        self.codegen = codegen
+    def __init__(self, cgen: codegen.Codegen):
+        self.codegen = cgen
 
     def name(self, tree):
         name_val = tree.children[0]

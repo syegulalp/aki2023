@@ -6,26 +6,19 @@ from aki import aki_types, codegen as cg
 def print_(codegen: cg.Codegen, args):
     builder = codegen.builder
     m: ir.Module = builder.module
-    fn = builder.module.globals.get("printf")
+    fn = m.globals.get("printf")
     if fn is None:
         ftype = ir.FunctionType(ir.IntType(8), [ir.PointerType(ir.IntType(8))])
         fn = ir.Function(builder.module, ftype, "printf")
 
     for arg in args:
-        if isinstance(arg.type, ir.IntType):
-            raise NotImplementedError
+        result = None
 
-        elif isinstance(arg.type, ir.PointerType):
-            if arg.type.pointee == aki_types.String(m).type:
-                p1 = builder.gep(
-                    arg,
-                    [
-                        ir.Constant(ir.IntType(32), 0),
-                        ir.Constant(ir.IntType(32), 1),
-                    ],
-                )
-                p1 = builder.load(p1)
-                result = builder.call(fn, [p1])
-                continue
+        if isinstance(arg.type.pointee.aki, aki_types.StringConstant):
+            result = arg.type.pointee.aki.aki_str(arg, codegen)
+
+        if result:
+            builder.call(fn, [result])
+            continue
 
         raise ValueError

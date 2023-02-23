@@ -2,6 +2,8 @@ from aki.walker import Walker, parser
 from aki.jitengine import JitEngine
 
 text = r"""
+y = 1
+z = y
 x = "Hello world"
 print(x)
 print("Hello world")
