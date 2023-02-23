@@ -10,6 +10,11 @@ class Codegen:
         self.strings = {}
         self.symtab = {}
 
+    def get_identified_type(self, i_type, klass):
+        type_to_get = self.module.context.get_identified_type(i_type)
+        type_to_get.__class__ = klass
+        return type_to_get
+
     def codegen_function(self, name="main", ftype=None):
         if not ftype:
             ftype = ir.FunctionType(ir.IntType(8), [])
@@ -22,6 +27,8 @@ class Codegen:
         var = self.symtab.get(name)
         if var is None:
             raise ValueError
+        if load:
+            var = self.builder.load(var)
         return var
 
     def codegen_funccall(self, call_name, args):
@@ -54,9 +61,12 @@ class Codegen:
 
     def codegen_string(self, token):
         base_text = token.children[0][1:-1]
+        return self.codegen_string_constant(base_text)
+
+    def codegen_string_constant(self, base_text):
         text = self.strings.get(base_text)
         if text is None:
-            string_var = aki_types.StringConstant(self.module, base_text, self.str_name)
+            string_var = aki_types.StringConstant(self, base_text, self.str_name)
             self.str_name += 1
             self.strings[base_text] = string_var
             string_var = string_var.value

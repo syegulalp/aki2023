@@ -1,26 +1,26 @@
 from llvmlite import ir
 
 
-class AkiType:
+class AkiType(ir.IdentifiedStructType):
     pass
 
 
-class Object(AkiType):
-    def __init__(self, module):
-        t: ir.IdentifiedStructType = module.context.get_identified_type("Obj")
-        if not t.elements:
-            # type | ref count | ptr to obj
-            t.set_body(ir.IntType(64), ir.IntType(64), ir.PointerType(ir.IntType(8)))
-        self.type = t
+# class Object(AkiType):
+#     def __init__(self, codegen):
+#         t: ir.IdentifiedStructType = codegen.get_identified_type("Obj")
+#         if not t.elements:
+#             # type | ref count | ptr to obj
+#             t.set_body(ir.IntType(64), ir.IntType(64), ir.PointerType(ir.IntType(8)))
+#         self.type = t
 
 
 class StringConstant(AkiType):
-    def __init__(self, module, base_value, name):
-        t: ir.IdentifiedStructType = module.context.get_identified_type("String")
+    def __init__(self, codegen, base_value, name):
+        t: ir.IdentifiedStructType = codegen.get_identified_type(
+            "String", self.__class__
+        )
         if not t.elements:
             t.set_body(ir.IntType(64), ir.PointerType(ir.IntType(8)))
-        self.type = t
-        self.type.aki = self
 
         text = base_value + "\x00"
         bytes_text = bytearray(text, encoding="utf8")
@@ -28,14 +28,16 @@ class StringConstant(AkiType):
             ir.ArrayType(ir.IntType(8), len(bytes_text)), bytes_text
         )
         string_const_ref = ir.GlobalVariable(
-            module, string_constant.type, f"const:str_txt_{name}"
+            codegen.module, string_constant.type, f"const:str_txt_{name}"
         )
         string_const_ref.global_constant = True
         string_const_ref.linkage = "internal"
         string_const_ref.initializer = string_constant
 
+        self.const_ref = string_const_ref
+
         string_var = ir.GlobalVariable(
-            module,
+            codegen.module,
             t,
             f"const:str_obj_{name}",
         )
@@ -62,8 +64,8 @@ class StringConstant(AkiType):
         return p1
 
 
-class Int(AkiType):
-    def __init__(self, module, width):
-        t: ir.IntType = ir.IntType(width)
-        self.type = t
-        self.type.aki = self
+# class Int(AkiType):
+#     def __init__(self, module, width):
+#         t: ir.IntType = ir.IntType(width)
+#         self.type = t
+#         self.type.aki = self
