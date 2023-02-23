@@ -64,8 +64,30 @@ class StringConstant(AkiType):
         return p1
 
 
-# class Int(AkiType):
-#     def __init__(self, module, width):
-#         t: ir.IntType = ir.IntType(width)
-#         self.type = t
-#         self.type.aki = self
+class AkiScalar:
+    @classmethod
+    def make(cls, *a, **ka):
+        item = cls(*a, **ka)
+        item.__class__ = cls
+        return item
+
+
+class Int(ir.IntType, AkiScalar):
+    aki_ops = {"+": "add", "-": "sub", "*": "mul", "/": "div"}
+
+    def add(self, builder, lhs, rhs):
+        return builder.add(lhs, rhs)
+
+    def sub(self, builder, lhs, rhs):
+        return builder.sub(lhs, rhs)
+
+    def mul(self, builder, lhs, rhs):
+        return builder.mul(lhs, rhs)
+
+    def div(self, builder, lhs, rhs):
+        return builder.sdiv(lhs, rhs)
+
+    aki_comps = {">": "gt", "<": "lt"}
+
+    def lt(self, builder, lhs, rhs):
+        return builder.icmp_signed("<", lhs, rhs)

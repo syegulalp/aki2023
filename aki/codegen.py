@@ -50,18 +50,42 @@ class Codegen:
     def codegen_assignment(self, target_name, value):
         var = self.symtab.get(target_name)
         if var is None:
-            if not isinstance(value.type, ir.PointerType):
+            if isinstance(value.type, aki_types.AkiScalar):
                 var = self.builder.alloca(value.type, name=target_name)
                 self.builder.store(value, var)
                 self.symtab[target_name] = var
             else:
                 self.symtab[target_name] = value
                 var = value
+        else:
+            self.builder.store(value, var)
         return var
+
+    def codegen_operation(self, lhs, rhs, operation):
+        t = lhs.type
+        op = getattr(t, t.aki_ops[operation])
+        result = op(self.builder, lhs, rhs)
+        return result
+
+    def codegen_comparison(self, lhs, rhs, operation):
+        t = lhs.type
+        op = getattr(t, t.aki_comps[operation])
+        result = op(self.builder, lhs, rhs)
+        return result
+
+    def codegen_loop_start(self):
+        condition_block = self.builder.append_basic_block("loop_start")
+        loop_block = self.builder.append_basic_block("loop_body")
+        after_loop_block = self.builder.append_basic_block("after_loop")
+        self.builder.branch(condition_block)
+        self.builder.position_at_start(condition_block)
+        return condition_block, loop_block, after_loop_block
 
     def codegen_int(self, value):
         int_value = int(value)
-        return ir.Constant(ir.IntType(64), int_value)
+        t = aki_types.Int.make(64)
+        f = ir.Constant(t, int_value)
+        return f
 
     def codegen_string(self, token):
         base_text = token.children[0][1:-1]

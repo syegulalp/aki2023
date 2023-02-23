@@ -25,7 +25,8 @@ class Walker(Interpreter):
         for child in tree.children:
             result = self.visit(child)
         # TODO: no ir references in this module if we can help it
-        builder.ret(ir.Constant(function.function_type.return_type, 0))
+        if not builder.block.is_terminated:
+            builder.ret(ir.Constant(function.function_type.return_type, 0))
 
     def funccall(self, tree):
         children = tree.children
@@ -55,7 +56,36 @@ class Walker(Interpreter):
     def assign(self, tree):
         target_name = self.visit(tree.children[0])
         value = self.vw.visit(tree.children[1])
-        return self.codegen.codegen_assignment(target_name, value)
+        x = self.codegen.codegen_assignment(target_name, value)
+        return x
+
+    def arith_expr(self, tree):
+        lhs = self.visit(tree.children[0])
+        rhs = self.visit(tree.children[2])
+        op = str(tree.children[1])
+        return self.codegen.codegen_operation(lhs, rhs, op)
+
+    # def const_true(self, tree):
+    #     return ir.Constant(ir.IntType(1), 1)
+
+    def while_stmt(self, tree):
+        b = self.codegen.builder
+        condition, operations = tree.children[0:2]
+        start, loop, end = self.codegen.codegen_loop_start()
+        condition = self.visit(condition)
+        b.cbranch(condition, loop, end)
+        b.position_at_start(loop)
+        for op in operations.children:
+            self.visit(op)
+        b.branch(start)
+        b.position_at_start(end)
+
+    def comparison(self, tree):
+        lhs, op, rhs = tree.children
+        lhs = self.vw.visit(lhs)
+        rhs = self.vw.visit(rhs)
+        op = op.children[0]
+        return self.codegen.codegen_comparison(lhs, rhs, op)
 
 
 class ValueWalker(Walker):
