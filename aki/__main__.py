@@ -6,7 +6,9 @@ y = 1
 z = y
 x = "Hello world"
 print(x)
+print("Hello", "world")
 print("Hello world")
+print("You have", y, "turns left.")
 """
 
 tree = parser.parse(text)

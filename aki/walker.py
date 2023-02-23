@@ -63,7 +63,7 @@ class ValueWalker(Walker):
         self.codegen = cgen
 
     def name(self, tree):
-        return self.codegen.codegen_get_var(tree.children[0])
+        return self.codegen.codegen_get_value(tree.children[0])
 
 
 class FuncCallWalker(Walker):
@@ -72,4 +72,4 @@ class FuncCallWalker(Walker):
 
     def name(self, tree):
         name_val = tree.children[0]
-        return self.codegen.codegen_get_var(name_val, load=True)
+        return self.codegen.codegen_get_value(name_val)

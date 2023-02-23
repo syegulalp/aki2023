@@ -23,11 +23,15 @@ class Codegen:
         self.builder = ir.IRBuilder(block)
         return func, self.builder
 
-    def codegen_get_var(self, name, load=False):
+    def codegen_get_var(self, name):
         var = self.symtab.get(name)
         if var is None:
             raise ValueError
-        if load:
+        return var
+
+    def codegen_get_value(self, name):
+        var = self.codegen_get_var(name)
+        if isinstance(var, ir.AllocaInstr):
             var = self.builder.load(var)
         return var
 
