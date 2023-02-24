@@ -65,14 +65,13 @@ class StringConstant(AkiType):
 
 
 class AkiScalar:
-    @classmethod
-    def make(cls, *a, **ka):
-        item = cls(*a, **ka)
+    def __new__(cls, *a, **ka):
+        item = super().__new__(cls, *a, **ka)
         item.__class__ = cls
         return item
 
 
-class Int(ir.IntType, AkiScalar):
+class Int(AkiScalar, ir.IntType):
     aki_ops = {"+": "add", "-": "sub", "*": "mul", "/": "div"}
 
     def add(self, builder, lhs, rhs):
@@ -87,7 +86,16 @@ class Int(ir.IntType, AkiScalar):
     def div(self, builder, lhs, rhs):
         return builder.sdiv(lhs, rhs)
 
-    aki_comps = {">": "gt", "<": "lt"}
+    aki_comps = {">": "gt", "<": "lt", "==": "eq", "!=": "ne"}
 
     def lt(self, builder, lhs, rhs):
         return builder.icmp_signed("<", lhs, rhs)
+
+    def gt(self, builder, lhs, rhs):
+        return builder.icmp_signed(">", lhs, rhs)
+
+    def eq(self, builder, lhs, rhs):
+        return builder.icmp_signed("==", lhs, rhs)
+
+    def ne(self, builder, lhs, rhs):
+        return builder.icmp_signed("!=", lhs, rhs)

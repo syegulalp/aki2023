@@ -9,6 +9,7 @@ class Codegen:
         self.str_name = 0
         self.strings = {}
         self.symtab = {}
+        self.breakpoints = []
 
     def get_identified_type(self, i_type, klass):
         type_to_get = self.module.context.get_identified_type(i_type)
@@ -83,7 +84,7 @@ class Codegen:
 
     def codegen_int(self, value):
         int_value = int(value)
-        t = aki_types.Int.make(64)
+        t = aki_types.Int(64)
         f = ir.Constant(t, int_value)
         return f
 

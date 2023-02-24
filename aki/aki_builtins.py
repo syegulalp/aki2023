@@ -6,6 +6,7 @@ from aki import aki_types, codegen as cg
 def print_(codegen: cg.Codegen, args):
     builder = codegen.builder
     m: ir.Module = builder.module
+
     fn = m.globals.get("printf")
     if fn is None:
         ftype = ir.FunctionType(
